@@ -1,0 +1,27 @@
+name: monorepo-part-2
+id: 'ari:cloud:compass:a1fe6479-0253-4bf2-8cb9-3c7c70456ae4:component/6769ddfe-0469-47f0-8807-9e419c80f596/f330ab94-810d-40c1-800f-bb8d8c982e3c'
+description: null
+configVersion: 1
+typeId: LIBRARY
+ownerId: null
+fields:
+  tier: 4
+links: []
+relationships: {}
+labels: null
+customFields:
+  - name: Data encrypted at rest
+    type: text
+    value: null
+  - name: Data encrypted in transit
+    type: text
+    value: null
+  - name: Deployed to regions
+    type: multi_select
+    value: null
+  - name: Last security review
+    type: text
+    value: null
+
+# Learn more about formatting compass.yml:
+# https://go.atlassian.com/compass-yml-format
