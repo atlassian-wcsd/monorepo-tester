@@ -90,6 +90,7 @@ def main():
     
     if not all([github_token, repository, pr_number]):
         print("Missing required environment variables")
+        print("Repo: %s, PR Number: %d, Token: %s" % (repository, pr_number, str(len(github_token()))))
         sys.exit(1)
     
     # Initialize calculator
