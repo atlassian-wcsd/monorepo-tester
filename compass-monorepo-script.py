@@ -4,14 +4,15 @@ import json
 import datetime
 from typing import List, Dict, Optional
 import github
+from github import Github, Auth
 import yaml
 import pytz
 
 class MetricsCalculator:
     def __init__(self, github_token: str, repository: str):
-        self.github_token = github_token
+        self.github_token = Auth.Token(github_token)
         self.repository_name = repository
-        self.g = github(github_token)
+        self.g = Github(auth=self.github_token)
         self.repo = self.g.get_repo(repository)
         
     def find_compass_files(self) -> List[str]:
@@ -90,7 +91,7 @@ def main():
     
     if not all([github_token, repository, pr_number]):
         print("Missing required environment variables")
-        print("Repo: %s, PR Number: %d, Token: %s" % (repository, pr_number, str(len(github_token()))))
+        print("Repo: %s, PR Number: %d, Token: %s" % (repository, pr_number, str(len(github_token))))
         sys.exit(1)
     
     # Initialize calculator
