@@ -171,7 +171,7 @@ class MetricsCalculator:
         
         return metrics
         
-    def calculate_deployment_time(self, pr_number: int, deployment_time: datetime.datetime) -> float:
+    def calculate_deployment_time(self, pr_number: int, deployment_time: datetime) -> float:
         """Calculate deployment time (time from merge to deployment)"""
         pr = self.repo.get_pull(pr_number)
         
@@ -193,7 +193,7 @@ def main():
     github_token = os.environ.get('GITHUB_TOKEN')
     repository = os.environ.get('GITHUB_REPOSITORY')
     pr_number = int(os.environ.get('PR_NUMBER')) 
-    deployment_time = datetime.datetime.now(pytz.UTC)
+    deployment_time = datetime.now(pytz.UTC)
     
     if not all([github_token, repository, pr_number]):
         print("Missing required environment variables")
