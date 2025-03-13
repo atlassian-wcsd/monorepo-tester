@@ -45,28 +45,33 @@ def getComponentARI(file_path):
 def find_overlapping_directories(list_a, list_b):
     """
     Given two lists of file paths, evaluates whether there are overlaps
-    in directories, ignoring the file names.
+    in directories, ignoring the file names, and returns the full file paths
+    from list_a that are in overlapping directories with list_b.
     Parameters:
     - list_a (list): The first list of file paths.
     - list_b (list): The second list of file paths.
     Returns:
-    - list: A list of overlapping directories from list_a found in list_b.
+    - list: A list of overlapping file paths from list_a found in directories from list_b.
     """
-    overlapping_directories = []
+    overlapping_files = []
     # Create a set for quick lookup of directories in list_b
     set_b = {os.path.normpath(os.path.dirname(path)) for path in list_b}
+    # Track the deepest file path found in overlapping directories
+    deepest_overlapping = {}
     for path_a in list_a:
-        # Get the directory of the path_a by ignoring the file
+        # Get the directory of path_a by ignoring the file name
         directory_a = os.path.normpath(os.path.dirname(path_a))
-        # Check if the directory_a or any of its parent directories are in set_b
-        while directory_a:
-            if directory_a in set_b:
-                overlapping_directories.append(directory_a)
-                break  # Stop checking higher-level directories once we find a match
-            # Move up to the parent directory
-            directory_a = os.path.dirname(directory_a)
-    print("Found %d overlapping paths: %s", len(overlapping_directories), str(overlapping_directories))
-    return overlapping_directories
+        # Check if the directory_a is in set_b
+        if directory_a in set_b:
+            # If this directory is already found, we compare to keep the deepest path
+            if directory_a not in deepest_overlapping or len(path_a) > len(deepest_overlapping[directory_a]):
+                deepest_overlapping[directory_a] = path_a
+
+    # Collect only the deepest overlapping file paths
+    overlapping_files = list(deepest_overlapping.values())
+    # Print the number of overlapping files found and the list of those files
+    print("Found %d overlapping file paths: %s" % (len(overlapping_files), str(overlapping_files)))
+    return overlapping_files
 
 def send_compass_event(repository,pull_request,cloud_id,component_id):
     # Environment variables
