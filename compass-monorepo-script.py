@@ -7,6 +7,112 @@ from github import Github
 from github import Auth
 import yaml
 import pytz
+import requests
+import os
+from datetime import datetime
+
+
+def getComponentARI(file_path):
+    """
+    Retrieves the 'id' from a YAML file and splits the given URL by '/'.
+
+    Parameters:
+    - file_path (str): The path to the YAML file.
+    - url (str): The URL to be split.
+
+    Returns:
+     - cloudId from the YAML file, representing the Atlassian site
+     - componentId from the YAML file, representing the component
+   
+    """
+    # Read the YAML file
+    try:
+        with open(file_path, 'r') as file:
+            data = yaml.safe_load(file)
+            id_value = data.get('id', None)  #Get the ARI value from the YAML file
+            if id_value is None:
+                raise ValueError("ID not found in YAML file.")
+            # Split the URL by '/'
+            url_parts = url.split(':')
+            cloud_id = url_parts[3]
+            component_id = url_parts[4].split('/')[1]
+    except Exception as e:
+        print(f"Error reading YAML file: {e}")
+        return None, None
+
+    
+    return component_id, cloud_id   
+
+def find_overlapping_directories(list_a, list_b):
+    """
+    Given two lists of file paths, evaluates whether there are overlaps
+    in directories, ignoring the file names.
+    Parameters:
+    - list_a (list): The first list of file paths.
+    - list_b (list): The second list of file paths.
+    Returns:
+    - list: A list of overlapping directories from list_a found in list_b.
+    """
+    overlapping_directories = []
+    # Create a set for quick lookup of directories in list_b
+    set_b = {os.path.normpath(os.path.dirname(path)) for path in list_b}
+    for path_a in list_a:
+        # Get the directory of the path_a by ignoring the file
+        directory_a = os.path.normpath(os.path.dirname(path_a))
+        # Check if the directory_a or any of its parent directories are in set_b
+        while directory_a:
+            if directory_a in set_b:
+                overlapping_directories.append(directory_a)
+                break  # Stop checking higher-level directories once we find a match
+            # Move up to the parent directory
+            directory_a = os.path.dirname(directory_a)
+    print("Found %d overlapping paths: %s", len(overlapping_directories), str(overlapping_directories))
+    return overlapping_directories
+
+def send_compass_event(repository,pull_request,cloud_id,component_id):
+    # Environment variables
+    user_email = os.getenv('USER_EMAIL')
+    user_api_token = os.getenv('USER_API_TOKEN')
+    atlassian_site=os.getenv('ATLASSIAN_SITE')
+
+    # Prepare the URL
+    url = "https://"+atlassian_site+".atlassian.net/gateway/api/compass/v1/events"
+    pr_url = "https://github.com/"+repository+"/pull/"+pull_request
+
+    # Prepare the headers
+    headers = {
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+    }
+
+    # Prepare the data payload
+    data = {
+        "cloudId": cloud_id,
+        "event": {
+            "custom": {
+                "updateSequenceNumber": 1,
+                "displayName": "name",
+                "description": "description",
+                "url": "",
+                "lastUpdated": datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
+                "externalEventSourceId": repository,
+                "customEventProperties": {
+                    "id": "1",
+                    "icon": "INFO"
+                }
+            }
+        },
+        "componentId": component_id
+    }
+
+    # Make the POST request
+    response = requests.post(url, json=data, headers=headers, auth=(user_email, user_api_token))
+
+    # Check the response
+    if response.status_code == 200:
+        print("Event created successfully:", response.json())
+    else:
+        print("Failed to create event:", response.status_code, response.text)
 
 class MetricsCalculator:
     def __init__(self, github_token: str, repository: str):
@@ -86,7 +192,7 @@ def main():
     # Get environment variables
     github_token = os.environ.get('GITHUB_TOKEN')
     repository = os.environ.get('GITHUB_REPOSITORY')
-    pr_number = int(os.environ.get('PR_NUMBER'))
+    pr_number = int(os.environ.get('PR_NUMBER')) 
     deployment_time = datetime.datetime.now(pytz.UTC)
     
     if not all([github_token, repository, pr_number]):
@@ -104,8 +210,10 @@ def main():
     print(f"Found {len(compass_files)} compass.yml files")
     
     # Get affected files
-    affected_components = calculator.get_affected_files(pr_number)
-    print(f"PR affects {len(affected_components)} components")
+    affected_files = calculator.get_affected_files(pr_number)
+    print(f"PR affects {len(affected_files)} files")
+    
+    affected_components = find_overlapping_directories(compass_files,affected_files)
     
     # Calculate metrics
     cycle_time_metrics = calculator.calculate_cycle_time(pr_number)
@@ -126,6 +234,13 @@ def main():
     output_file = os.environ.get('METRICS_OUTPUT', 'deployment_metrics.json')
     calculator.write_metrics(metrics, output_file)
     print(f"Metrics written to {output_file}")
+    
+    for component in affected_components:
+        # Fetch YAML file and get Ids
+        cloud_id, component_id = getComponentARI(component)
+        # Send Compass event
+        send_compass_event(repository, pr_number, cloud_id, component_id)
+        print("Compass event sent")
     
     # Print summary to console
     print("\nMetrics Summary:")
