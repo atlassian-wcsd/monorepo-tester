@@ -4,17 +4,21 @@
 name: Python application
 
 on:
+  workflow_dispatch:
+    inputs:
+      num-pull_request_to_test:
+        description: 'Pull Request Id to Test'
+        required: true
+        default: '1'
   push:
-    
+
   pull_request:
     types:
       - closed
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v4
     - name: Set up Python 3.9
@@ -28,7 +32,7 @@ jobs:
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Run Script
       run: |
-        export PR_NUMBER=1 && export GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }} && python compass-monorepo-script.py
+        export PR_NUMBER=${{ github.event.inputs.pull_request_to_test }} && export GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }} && python compass-monorepo-script.py
   if_merged:
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
@@ -47,7 +51,7 @@ jobs:
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Run Script
       run: |
-        export PR_NUMBER=${{ github.event.pull_request.number }} && export GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }} && python compass-monorepo-script.py
+        export PR_NUMBER=${{ github.event.pull_request.number }} && export GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }} python compass-monorepo-script.py
     - name: Archive results
       uses: actions/upload-artifact@v4
       with:
