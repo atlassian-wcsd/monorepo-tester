@@ -3,8 +3,8 @@ import sys
 import json
 import datetime
 from typing import List, Dict, Optional
-import github
-from github import Github, Auth
+from github import Github
+from github import Auth
 import yaml
 import pytz
 
@@ -91,7 +91,9 @@ def main():
     
     if not all([github_token, repository, pr_number]):
         print("Missing required environment variables")
-        print("Repo: %s, PR Number: %d, Token: %s" % (repository, pr_number, str(len(github_token))))
+        if not len(github_token) > 0:
+            print("Github Token not found")
+        print("Repo: %s, PR Number: %d" % (repository, pr_number))
         sys.exit(1)
     
     # Initialize calculator
