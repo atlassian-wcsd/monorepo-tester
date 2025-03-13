@@ -6,12 +6,10 @@ name: Python application
 on:
   workflow_dispatch:
     inputs:
-      num-pull_request_to_test:
+      pull_request_to_test:
         description: 'Pull Request Id to Test'
         required: true
         default: '1'
-  push:
-
   pull_request:
     types:
       - closed
