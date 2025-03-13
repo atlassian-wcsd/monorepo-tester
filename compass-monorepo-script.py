@@ -1,7 +1,6 @@
 import os
 import sys
 import json
-import datetime
 from typing import List, Dict, Optional
 from github import Github
 from github import Auth
@@ -33,9 +32,9 @@ def getComponentARI(file_path):
             if id_value is None:
                 raise ValueError("ID not found in YAML file.")
             # Split the URL by '/'
-            url_parts = url.split(':')
+            url_parts = id_value.split(':')
             cloud_id = url_parts[3]
-            component_id = url_parts[4].split('/')[1]
+            component_id = id_value
     except Exception as e:
         print(f"Error reading YAML file: {e}")
         return None, None
@@ -74,6 +73,10 @@ def send_compass_event(repository,pull_request,cloud_id,component_id):
     user_email = os.getenv('USER_EMAIL')
     user_api_token = os.getenv('USER_API_TOKEN')
     atlassian_site=os.getenv('ATLASSIAN_SITE')
+    
+    if not ( user_email and user_api_token and atlassian_site):
+        print("Atlassian credentials and configuration not set")
+        sys.exit(1)
 
     # Prepare the URL
     url = "https://"+atlassian_site+".atlassian.net/gateway/api/compass/v1/events"
@@ -86,6 +89,7 @@ def send_compass_event(repository,pull_request,cloud_id,component_id):
     }
 
     # Prepare the data payload
+    #TODO - update the event name and description
     data = {
         "cloudId": cloud_id,
         "event": {
@@ -93,8 +97,8 @@ def send_compass_event(repository,pull_request,cloud_id,component_id):
                 "updateSequenceNumber": 1,
                 "displayName": "name",
                 "description": "description",
-                "url": "",
-                "lastUpdated": datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
+                "url": pr_url,
+                "lastUpdated": datetime.now(pytz.UTC).strftime('%Y-%m-%dT%H:%M:%SZ'),
                 "externalEventSourceId": repository,
                 "customEventProperties": {
                     "id": "1",
@@ -227,7 +231,7 @@ def main():
         'affected_components': affected_components,
         'pr_number': pr_number,
         'repository': repository,
-        'timestamp': datetime.datetime.now(pytz.UTC).isoformat()
+        'timestamp': datetime.now(pytz.UTC).isoformat()
     }
     
     # Write metrics to file
@@ -238,6 +242,7 @@ def main():
     for component in affected_components:
         # Fetch YAML file and get Ids
         cloud_id, component_id = getComponentARI(component)
+        print("Wanted to send event for {component_id} on {cloud_id}")
         # Send Compass event
         send_compass_event(repository, pr_number, cloud_id, component_id)
         print("Compass event sent")
