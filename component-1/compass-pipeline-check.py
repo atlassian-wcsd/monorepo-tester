@@ -19,7 +19,7 @@ headers = {
 scorecardId = os.getenv("ATLASSIAN_SCORECARD_ID")
 # "ari:cloud:compass:a1fe6479-0253-4bf2-8cb9-3c7c70456ae4:component/6769ddfe-0469-47f0-8807-9e419c80f596/49d4738d-ecd6-49ef-9fc1-b01e0772c214"
 
-
+# Adding some documentation
 
 def read_compass_yaml(file_path):
     with open(file_path, 'r') as file:
