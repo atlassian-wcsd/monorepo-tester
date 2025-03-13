@@ -40,7 +40,7 @@ def getComponentARI(file_path):
         return None, None
 
     
-    return component_id, cloud_id   
+    return cloud_id, component_id   
 
 def find_overlapping_directories(list_a, list_b):
     """
@@ -85,7 +85,7 @@ def send_compass_event(repository,pull_request,cloud_id,component_id):
 
     # Prepare the URL
     url = "https://"+atlassian_site+".atlassian.net/gateway/api/compass/v1/events"
-    pr_url = "https://github.com/"+repository+"/pull/"+pull_request
+    pr_url = "https://github.com/"+repository+"/pull/"+str(pull_request)
 
     # Prepare the headers
     headers = {
@@ -97,31 +97,32 @@ def send_compass_event(repository,pull_request,cloud_id,component_id):
     #TODO - update the event name and description
     data = {
         "cloudId": cloud_id,
-        "event": {
+         "event": {
             "custom": {
-                "updateSequenceNumber": 1,
-                "displayName": "name",
-                "description": "description",
+                "updateSequenceNumber": pull_request,
+                "displayName": f"Pull Request #{pull_request} merged",
+                "description": f"Pull Request #{pull_request} was merged at {datetime.now(pytz.UTC).strftime('%Y-%m-%dT%H:%M:%SZ')}",
                 "url": pr_url,
                 "lastUpdated": datetime.now(pytz.UTC).strftime('%Y-%m-%dT%H:%M:%SZ'),
                 "externalEventSourceId": repository,
                 "customEventProperties": {
                     "id": "1",
-                    "icon": "INFO"
+                    "icon": "CHECKPOINT"
                 }
             }
         },
         "componentId": component_id
     }
 
+
     # Make the POST request
     response = requests.post(url, json=data, headers=headers, auth=(user_email, user_api_token))
 
     # Check the response
-    if response.status_code == 200:
-        print("Event created successfully:", response.json())
+    if response.status_code == 202:
+        print("Event created successfully:", response.text)
     else:
-        print("Failed to create event:", response.status_code, response.text)
+        print("Failed to create event:", response.status_code, response.text,response.content)
 
 class MetricsCalculator:
     def __init__(self, github_token: str, repository: str):
@@ -247,7 +248,7 @@ def main():
     for component in affected_components:
         # Fetch YAML file and get Ids
         cloud_id, component_id = getComponentARI(component)
-        print("Wanted to send event for {component_id} on {cloud_id}")
+        print(f"Wanted to send event for {component_id} on {cloud_id}")
         # Send Compass event
         send_compass_event(repository, pr_number, cloud_id, component_id)
         print("Compass event sent")
