@@ -104,8 +104,8 @@ def main():
     print(f"Found {len(compass_files)} compass.yml files")
     
     # Get affected files
-    affected_files = calculator.get_affected_files(pr_number)
-    print(f"PR affects {len(affected_files)} files")
+    affected_components = calculator.get_affected_files(pr_number)
+    print(f"PR affects {len(affected_components)} components")
     
     # Calculate metrics
     cycle_time_metrics = calculator.calculate_cycle_time(pr_number)
@@ -116,7 +116,7 @@ def main():
         **cycle_time_metrics,
         'deployment_time': deployment_time,
         'compass_files': compass_files,
-        'affected_files': affected_files,
+        'affected_components': affected_components,
         'pr_number': pr_number,
         'repository': repository,
         'timestamp': datetime.datetime.now(pytz.UTC).isoformat()
@@ -133,7 +133,7 @@ def main():
     print(f"Time to First Review: {metrics['time_to_first_review']:.2f} hours")
     print(f"Time to Merge: {metrics['time_to_merge']:.2f} hours")
     print(f"Deployment Time: {metrics['deployment_time']:.2f} hours")
-    print(f"Total Files Affected: {len(metrics['affected_files'])}")
+    print(f"Total Components Affected: {len(metrics['affected_components'])}")
     print(f"Total Compass Files: {len(metrics['compass_files'])}")
 
 if __name__ == "__main__":
