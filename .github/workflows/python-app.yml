@@ -29,8 +29,14 @@ jobs:
         pip install flake8 pytest
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Run Script
+      env: 
+        PR_NUMBER: ${{ github.event.inputs.pull_request_to_test }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        USER_EMAIL: ${{ secrets.USER_EMAIL}}
+        USER_API_TOKEN: ${{ secrets.USER_API_TOKEN}}
+        ATLASSIAN_SITE:  ${{ secrets.ATLASSIAN_SITE}}
       run: |
-        export PR_NUMBER=${{ github.event.inputs.pull_request_to_test }} && export GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }} && python compass-monorepo-script.py
+         python compass-monorepo-script.py
   if_merged:
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
@@ -48,8 +54,14 @@ jobs:
         pip install flake8 pytest
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Run Script
+      env: 
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        USER_EMAIL: ${{ secrets.USER_EMAIL}}
+        USER_API_TOKEN: ${{ secrets.USER_API_TOKEN}}
+        ATLASSIAN_SITE:  ${{ secrets.ATLASSIAN_SITE}}
       run: |
-        export PR_NUMBER=${{ github.event.pull_request.number }} && export GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }} python compass-monorepo-script.py
+         python compass-monorepo-script.py
     - name: Archive results
       uses: actions/upload-artifact@v4
       with:
